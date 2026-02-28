@@ -71,7 +71,8 @@ describe('Wallet API', () => {
   })
 
   describe('GET /wallet/transactions', () => {
-    it('returns paginated empty list when no transactions', async () => {
+    it('returns list with registration bonus transaction by default', async () => {
+      // Registration creates a BONUS transaction for 1000 pulses
       const res = await app.inject({
         method: 'GET',
         url: '/wallet/transactions',
@@ -82,12 +83,13 @@ describe('Wallet API', () => {
       expect(body).toHaveProperty('data')
       expect(body).toHaveProperty('pagination')
       expect(Array.isArray(body.data)).toBe(true)
-      expect(body.pagination.total).toBe(0)
+      expect(body.pagination.total).toBe(1) // registration bonus
+      expect(body.data[0].type).toBe('BONUS')
       expect(body.pagination.page).toBe(1)
     })
 
     it('returns transactions for the user', async () => {
-      // Seed a transaction
+      // Seed an additional transaction (1 BONUS already exists from registration)
       await prisma.transaction.create({
         data: {
           userId,
@@ -104,17 +106,16 @@ describe('Wallet API', () => {
       })
       expect(res.statusCode).toBe(200)
       const body = res.json()
-      expect(body.data).toHaveLength(1)
-      expect(body.data[0].type).toBe('DEPOSIT')
-      expect(body.data[0].amount).toBe(500)
-      expect(body.pagination.total).toBe(1)
+      expect(body.pagination.total).toBe(2) // BONUS + DEPOSIT
+      const types = body.data.map((t: { type: string }) => t.type)
+      expect(types).toContain('DEPOSIT')
     })
 
     it('supports pagination via ?page=1&limit=5', async () => {
-      // Seed 10 transactions
-      for (let i = 0; i < 10; i++) {
+      // Seed 9 more transactions (1 BONUS already exists from registration = 10 total)
+      for (let i = 0; i < 9; i++) {
         await prisma.transaction.create({
-          data: { userId, type: 'BONUS', amount: i + 1, comment: `Bonus ${i + 1}` },
+          data: { userId, type: 'DEPOSIT', amount: i + 1, comment: `Deposit ${i + 1}` },
         })
       }
 
