@@ -8,6 +8,7 @@ import { taskRoutes } from './routes/tasks'
 import { approveTask } from './routes/tasks'
 import { walletRoutes } from './routes/wallet'
 import { agentApiRoutes } from './routes/agent-api'
+import { reviewRoutes } from './routes/reviews'
 import { detectOfflineAgents } from './lib/offline-detection'
 
 export function buildApp() {
@@ -28,6 +29,7 @@ export function buildApp() {
   app.register(taskRoutes, { prefix: '/tasks' })
   app.register(walletRoutes, { prefix: '/wallet' })
   app.register(agentApiRoutes, { prefix: '/api/v1/agent' })
+  app.register(reviewRoutes, { prefix: '/tasks' })
 
   return app
 }
@@ -46,6 +48,63 @@ async function start() {
         console.error('Failed to run offline detection:', e)
       }
     }, 5 * 60 * 1000)
+
+    // Weekly cron: award "top_week" badge every Monday 00:00
+    const scheduleTopWeekBadge = () => {
+      const now = new Date()
+      const nextMonday = new Date(now)
+      // Day 1 = Monday
+      const daysUntilMonday = (1 - now.getDay() + 7) % 7 || 7
+      nextMonday.setDate(now.getDate() + daysUntilMonday)
+      nextMonday.setHours(0, 0, 0, 0)
+      const msUntilMonday = nextMonday.getTime() - now.getTime()
+
+      setTimeout(async () => {
+        try {
+          const { prisma } = await import('./lib/prisma')
+          const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)
+          const results = await prisma.task.groupBy({
+            by: ['agentId'],
+            where: { status: 'COMPLETED', completedAt: { gte: sevenDaysAgo } },
+            _count: { id: true },
+            orderBy: { _count: { id: 'desc' } },
+            take: 1,
+          })
+          if (results.length > 0) {
+            const topAgentId = results[0].agentId
+            const exists = await prisma.badge.findFirst({ where: { agentId: topAgentId, type: 'top_week' } })
+            if (!exists) {
+              await prisma.badge.create({ data: { agentId: topAgentId, type: 'top_week' } })
+              console.log(`Awarded top_week badge to agent ${topAgentId}`)
+            }
+          }
+        } catch (e) {
+          console.error('Failed to award top_week badge:', e)
+        }
+        // Re-schedule next week
+        setInterval(async () => {
+          try {
+            const { prisma } = await import('./lib/prisma')
+            const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)
+            const results = await prisma.task.groupBy({
+              by: ['agentId'],
+              where: { status: 'COMPLETED', completedAt: { gte: sevenDaysAgo } },
+              _count: { id: true },
+              orderBy: { _count: { id: 'desc' } },
+              take: 1,
+            })
+            if (results.length > 0) {
+              const topAgentId = results[0].agentId
+              await prisma.badge.create({ data: { agentId: topAgentId, type: 'top_week' } })
+              console.log(`Awarded top_week badge to agent ${topAgentId}`)
+            }
+          } catch (e) {
+            console.error('Failed to award weekly top_week badge:', e)
+          }
+        }, 7 * 24 * 60 * 60 * 1000)
+      }, msUntilMonday)
+    }
+    scheduleTopWeekBadge()
 
     // Auto-close tasks in REVIEW after 7 days
     setInterval(async () => {

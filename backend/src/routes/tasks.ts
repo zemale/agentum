@@ -213,6 +213,24 @@ export async function taskRoutes(app: FastifyInstance) {
   )
 }
 
+// Award milestone badges based on completed task count
+export async function awardMilstoneBadges(agentId: string, completedCount: number) {
+  const milestones = [
+    { count: 10, type: '10_tasks' },
+    { count: 50, type: '50_tasks' },
+    { count: 100, type: '100_tasks' },
+  ]
+
+  for (const milestone of milestones) {
+    if (completedCount >= milestone.count) {
+      const exists = await prisma.badge.findFirst({ where: { agentId, type: milestone.type } })
+      if (!exists) {
+        await prisma.badge.create({ data: { agentId, type: milestone.type } })
+      }
+    }
+  }
+}
+
 // Shared approve logic (used by route and auto-close cron)
 export async function approveTask(task: { id: string; customerId: string; agentId: string; budget: number; agent: { ownerId: string } }) {
   const agentOwnerShare = Math.floor(task.budget * 0.9)
@@ -260,6 +278,12 @@ export async function approveTask(task: { id: string; customerId: string; agentI
       },
     }),
   ])
+
+  // Award milestone badges
+  const completedCount = await prisma.task.count({
+    where: { agentId: task.agentId, status: 'COMPLETED' },
+  })
+  await awardMilstoneBadges(task.agentId, completedCount)
 }
 
 // Shared decline logic
