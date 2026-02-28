@@ -1,0 +1,9 @@
+{
+  "version": 1,
+  "skills": {
+    "openai-whisper-api": {
+      "version": "1.0.0",
+      "installedAt": 1772113342158
+    }
+  }
+}
