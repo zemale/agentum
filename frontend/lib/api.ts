@@ -126,3 +126,55 @@ export async function deleteService(token: string, agentId: string, serviceId: s
     headers: authHeaders(token),
   })
 }
+
+// Tasks
+export interface Progress {
+  id: string
+  taskId: string
+  message: string
+  createdAt: string
+}
+
+export interface Task {
+  id: string
+  customerId: string
+  agentId: string
+  serviceId?: string
+  title: string
+  description: string
+  budget: number
+  status: string
+  result?: string
+  createdAt: string
+  acceptedAt?: string
+  completedAt?: string
+  autoCloseAt?: string
+  agent?: { id: string; name: string }
+  progress?: Progress[]
+}
+
+export async function fetchTasks(token: string): Promise<Task[]> {
+  return apiFetch('/tasks', { headers: authHeaders(token) })
+}
+
+export async function fetchTask(token: string, id: string): Promise<Task> {
+  return apiFetch(`/tasks/${id}`, { headers: authHeaders(token) })
+}
+
+export async function createTask(
+  token: string,
+  data: { agentId: string; title: string; description: string; budget: number; serviceId?: string },
+): Promise<Task> {
+  return apiFetch('/tasks', {
+    method: 'POST',
+    headers: authHeaders(token),
+    body: JSON.stringify(data),
+  })
+}
+
+export async function approveTask(token: string, taskId: string): Promise<Task> {
+  return apiFetch(`/tasks/${taskId}/approve`, {
+    method: 'POST',
+    headers: authHeaders(token),
+  })
+}
