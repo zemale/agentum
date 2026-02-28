@@ -1,0 +1,26 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(node --version && npm --version && npx --version 2>&1)",
+      "Bash(which psql && psql --version 2>&1; which redis-cli && redis-cli --version 2>&1)",
+      "Bash(pg_isready 2>&1; redis-cli ping 2>&1; which redis-server 2>&1)",
+      "Bash(which docker && docker --version 2>&1; which docker-compose && docker-compose --version 2>&1)",
+      "Bash(apt list --installed 2>/dev/null | grep -E \"postgres|redis|docker\" | head -20)",
+      "Bash(sudo apt-get update -qq 2>&1 | tail -3 && echo \"apt works\")",
+      "Bash(cd /home/developer/projects/agentum/backend && npm install 2>&1 | tail -5)",
+      "Bash(npm test 2>&1)",
+      "Bash(npx prisma init --datasource-provider sqlite 2>&1)",
+      "Bash(npx prisma migrate dev --name init 2>&1)",
+      "Bash(cd /home/developer/projects/agentum && npx create-next-app@14 frontend --typescript --tailwind --app --no-eslint --no-src-dir --import-alias \"@/*\" --use-npm 2>&1)",
+      "Bash(cd /home/developer/projects/agentum/frontend && npm install zustand swr lucide-react 2>&1 | tail -5)",
+      "Bash(npm install class-variance-authority clsx tailwind-merge @radix-ui/react-slot 2>&1 | tail -5)",
+      "Bash(cd /home/developer/projects/agentum && git add -A && git commit -m \"$\\(cat <<'EOF'\nchore: init monorepo structure\n\n- Monorepo with backend/, frontend/, shared/ workspaces\n- Root package.json with npm workspaces\n- .gitignore and README.md\n\nCo-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>\nEOF\n\\)\")",
+      "Bash(cd /home/developer/projects/agentum && git config user.email \"dev@agentum.io\" && git config user.name \"Agentum Dev\" && git add -A && git commit -m \"$\\(cat <<'EOF'\nchore: init monorepo structure\n\n- Monorepo with backend/, frontend/, shared/ workspaces\n- Root package.json with npm workspaces\n- .gitignore and README.md\n\nCo-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>\nEOF\n\\)\")",
+      "Bash(cd /home/developer/projects/agentum/backend && npx prisma migrate dev --name add-user 2>&1)",
+      "Bash(npm test -- --reporter=verbose 2>&1 | grep -E \"\\(FAIL|PASS|✓|✗|×|Error\\)\" | head -20)",
+      "Bash(cd /home/developer/projects/agentum/frontend && npm run build 2>&1)",
+      "Bash(cd /home/developer/projects/agentum/backend && npm test 2>&1 | tail -15)",
+      "Bash(cd /home/developer/projects/agentum && git add -A && git commit -m \"$\\(cat <<'EOF'\nfeat: implement Phase 1 & Phase 2 — setup and auth\n\nPhase 1 — Project Setup:\n- Init monorepo with backend/frontend/shared workspaces\n- Fastify backend with /health endpoint \\(tested\\)\n- Prisma + SQLite schema with all models \\(User, Agent, Task, Transaction, etc.\\)\n- ioredis client with graceful fallback when Redis unavailable\n- Next.js 14 + Tailwind + shadcn/ui components \\(Button, Input, Label, Card\\)\n\nPhase 2 — Auth:\n- POST /auth/register: bcrypt password hash, 1000 Pulse bonus, JWT\n- POST /auth/login: credential validation, JWT\n- GET /auth/me: JWT middleware protected endpoint\n- Frontend: register/login pages with form validation and error display\n- Zustand auth store with initialize\\(\\) for session restore\n- Navbar component with balance display\n- All auth tests pass \\(12/12\\)\n\nCo-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>\nEOF\n\\)\")"
+    ]
+  }
+}
