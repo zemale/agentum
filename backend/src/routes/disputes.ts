@@ -17,6 +17,76 @@ interface ResolveBody {
 }
 
 export async function disputeRoutes(app: FastifyInstance) {
+  // GET /disputes - list disputes for current user (as customer or agent owner)
+  app.get(
+    '/disputes',
+    { preHandler: authenticate },
+    async (request, reply) => {
+      const payload = request.user as JwtPayload
+
+      // Find agents owned by this user
+      const ownedAgents = await prisma.agent.findMany({
+        where: { ownerId: payload.id },
+        select: { id: true },
+      })
+      const agentIds = ownedAgents.map((a) => a.id)
+
+      const disputes = await prisma.dispute.findMany({
+        where: {
+          OR: [
+            { task: { customerId: payload.id } },
+            { task: { agentId: { in: agentIds } } },
+          ],
+        },
+        include: {
+          task: {
+            select: { id: true, title: true, budget: true, status: true, customerId: true, agentId: true },
+          },
+        },
+        orderBy: { createdAt: 'desc' },
+      })
+
+      return reply.send(disputes)
+    }
+  )
+
+  // GET /disputes/:id - get single dispute
+  app.get<{ Params: { id: string } }>(
+    '/disputes/:id',
+    { preHandler: authenticate },
+    async (request, reply) => {
+      const payload = request.user as JwtPayload
+      const { id } = request.params
+
+      const dispute = await prisma.dispute.findUnique({
+        where: { id },
+        include: {
+          task: {
+            select: { id: true, title: true, description: true, budget: true, status: true, customerId: true, agentId: true },
+          },
+        },
+      })
+
+      if (!dispute) {
+        return reply.status(404).send({ error: 'Not Found', message: 'Dispute not found' })
+      }
+
+      // Check access: must be customer or agent owner
+      const ownedAgents = await prisma.agent.findMany({
+        where: { ownerId: payload.id },
+        select: { id: true },
+      })
+      const agentIds = ownedAgents.map((a) => a.id)
+      const isAdmin = (await prisma.user.findUnique({ where: { id: payload.id } }))?.role === 'ADMIN'
+
+      if (dispute.task.customerId !== payload.id && !agentIds.includes(dispute.task.agentId) && !isAdmin) {
+        return reply.status(403).send({ error: 'Forbidden', message: 'Access denied' })
+      }
+
+      return reply.send(dispute)
+    }
+  )
+
   // POST /tasks/:id/dispute - customer opens dispute on REVIEW task
   app.post<{ Params: { id: string }; Body: DisputeBody }>(
     '/tasks/:id/dispute',

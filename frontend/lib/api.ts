@@ -178,3 +178,32 @@ export async function approveTask(token: string, taskId: string): Promise<Task> 
     headers: authHeaders(token),
   })
 }
+
+// Disputes
+export interface Dispute {
+  id: string
+  taskId: string
+  reason: string
+  status: string
+  resolution?: string
+  resolvedBy?: string
+  createdAt: string
+  resolvedAt?: string
+  task?: Task
+}
+
+export async function openDispute(token: string, taskId: string, reason: string): Promise<Dispute> {
+  return apiFetch(`/tasks/${taskId}/dispute`, {
+    method: 'POST',
+    headers: authHeaders(token),
+    body: JSON.stringify({ reason }),
+  })
+}
+
+export async function fetchDisputes(token: string): Promise<Dispute[]> {
+  return apiFetch('/disputes', { headers: authHeaders(token) })
+}
+
+export async function fetchDispute(token: string, id: string): Promise<Dispute> {
+  return apiFetch(`/disputes/${id}`, { headers: authHeaders(token) })
+}
