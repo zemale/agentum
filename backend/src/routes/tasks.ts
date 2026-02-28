@@ -65,6 +65,14 @@ export async function taskRoutes(app: FastifyInstance) {
           where: { id: payload.id },
           data: { balance: { decrement: budget }, frozen: { increment: budget } },
         }),
+        prisma.transaction.create({
+          data: {
+            userId: payload.id,
+            type: 'ESCROW_LOCK',
+            amount: -budget,
+            comment: `Escrow lock for task: ${title}`,
+          },
+        }),
       ])
 
       return reply.status(201).send(task)
@@ -208,6 +216,7 @@ export async function taskRoutes(app: FastifyInstance) {
 // Shared approve logic (used by route and auto-close cron)
 export async function approveTask(task: { id: string; customerId: string; agentId: string; budget: number; agent: { ownerId: string } }) {
   const agentOwnerShare = Math.floor(task.budget * 0.9)
+  const commission = task.budget - agentOwnerShare
 
   await prisma.$transaction([
     prisma.task.update({
@@ -221,6 +230,57 @@ export async function approveTask(task: { id: string; customerId: string; agentI
     prisma.user.update({
       where: { id: task.agent.ownerId },
       data: { balance: { increment: agentOwnerShare } },
+    }),
+    // Transaction logs
+    prisma.transaction.create({
+      data: {
+        userId: task.customerId,
+        type: 'PAYMENT',
+        amount: -task.budget,
+        taskId: task.id,
+        comment: 'Payment for completed task',
+      },
+    }),
+    prisma.transaction.create({
+      data: {
+        userId: task.agent.ownerId,
+        type: 'EARNING',
+        amount: agentOwnerShare,
+        taskId: task.id,
+        comment: 'Earning for completed task (90%)',
+      },
+    }),
+    prisma.transaction.create({
+      data: {
+        userId: task.customerId,
+        type: 'COMMISSION',
+        amount: -commission,
+        taskId: task.id,
+        comment: 'Platform commission (10%)',
+      },
+    }),
+  ])
+}
+
+// Shared decline logic
+export async function declineTask(task: { id: string; customerId: string; budget: number }) {
+  await prisma.$transaction([
+    prisma.task.update({
+      where: { id: task.id },
+      data: { status: 'DECLINED' },
+    }),
+    prisma.user.update({
+      where: { id: task.customerId },
+      data: { balance: { increment: task.budget }, frozen: { decrement: task.budget } },
+    }),
+    prisma.transaction.create({
+      data: {
+        userId: task.customerId,
+        type: 'ESCROW_RELEASE',
+        amount: task.budget,
+        taskId: task.id,
+        comment: 'Escrow released - task declined',
+      },
     }),
   ])
 }

@@ -6,6 +6,9 @@ import { authRoutes } from './routes/auth'
 import { agentRoutes } from './routes/agents'
 import { taskRoutes } from './routes/tasks'
 import { approveTask } from './routes/tasks'
+import { walletRoutes } from './routes/wallet'
+import { agentApiRoutes } from './routes/agent-api'
+import { detectOfflineAgents } from './lib/offline-detection'
 
 export function buildApp() {
   const app = Fastify({ logger: process.env.NODE_ENV !== 'test' })
@@ -23,6 +26,8 @@ export function buildApp() {
   app.register(authRoutes, { prefix: '/auth' })
   app.register(agentRoutes, { prefix: '/agents' })
   app.register(taskRoutes, { prefix: '/tasks' })
+  app.register(walletRoutes, { prefix: '/wallet' })
+  app.register(agentApiRoutes, { prefix: '/api/v1/agent' })
 
   return app
 }
@@ -32,6 +37,15 @@ async function start() {
   try {
     await app.listen({ port: 3001, host: '0.0.0.0' })
     console.log('Agentum backend running on http://localhost:3001')
+
+    // Offline detection: every 5 minutes
+    setInterval(async () => {
+      try {
+        await detectOfflineAgents()
+      } catch (e) {
+        console.error('Failed to run offline detection:', e)
+      }
+    }, 5 * 60 * 1000)
 
     // Auto-close tasks in REVIEW after 7 days
     setInterval(async () => {
