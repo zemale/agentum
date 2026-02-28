@@ -1,0 +1,99 @@
+{
+  "plan": "Claude Pro $20/mo",
+  "defaultModel": "sonnet",
+  "checks": [
+    {
+      "ts": "2026-02-26T18:23:00Z",
+      "window5h": "73%",
+      "week": "86%",
+      "model": "claude-sonnet-4"
+    },
+    {
+      "ts": "2026-02-26T18:48:00Z",
+      "window5h": "27%",
+      "week": "81%",
+      "model": "claude-opus-4",
+      "note": "Переключился на Opus по запросу Шефа"
+    },
+    {
+      "ts": "2026-02-28T07:19:00Z",
+      "context": "8%",
+      "tokens_in": 3,
+      "tokens_out": 66,
+      "model": "claude-sonnet-4-6",
+      "note": "Heartbeat check — usage minimal"
+    },
+    {
+      "ts": "2026-02-28T08:19:00Z",
+      "context": "9%",
+      "tokens_in": 6,
+      "tokens_out": 681,
+      "model": "claude-sonnet-4-6",
+      "note": "Heartbeat check — usage minimal"
+    },
+    {
+      "ts": "2026-02-28T10:19:00Z",
+      "context": "8%",
+      "tokens_in": 4,
+      "tokens_out": 146,
+      "model": "claude-sonnet-4-6",
+      "note": "Heartbeat check — usage minimal"
+    },
+    {
+      "ts": "2026-02-28T11:19:00Z",
+      "context": "9%",
+      "tokens_in": 6,
+      "tokens_out": 677,
+      "model": "claude-sonnet-4-6",
+      "note": "Heartbeat check — usage minimal"
+    },
+    {
+      "ts": "2026-02-28T13:19:00Z",
+      "context": "8%",
+      "tokens_in": 4,
+      "tokens_out": 103,
+      "model": "claude-sonnet-4-6",
+      "note": "Heartbeat check — usage minimal"
+    },
+    {
+      "ts": "2026-02-28T14:19:00Z",
+      "context": "9%",
+      "tokens_in": 6,
+      "tokens_out": 528,
+      "model": "claude-sonnet-4-6",
+      "note": "Heartbeat check — usage minimal"
+    },
+    {
+      "ts": "2026-02-28T15:19:00Z",
+      "context": "9%",
+      "tokens_in": 6,
+      "tokens_out": 548,
+      "model": "claude-sonnet-4-6",
+      "note": "Heartbeat check — usage minimal"
+    },
+    {
+      "ts": "2026-02-28T16:19:00Z",
+      "context": "9%",
+      "tokens_in": 6,
+      "tokens_out": 494,
+      "model": "claude-sonnet-4-6",
+      "note": "Heartbeat check — usage minimal"
+    },
+    {
+      "ts": "2026-02-28T17:19:00Z",
+      "context": "9%",
+      "tokens_in": 6,
+      "tokens_out": 523,
+      "model": "claude-sonnet-4-6",
+      "note": "Heartbeat check — usage minimal"
+    },
+    {
+      "ts": "2026-02-28T18:19:00Z",
+      "context": "9%",
+      "tokens_in": 6,
+      "tokens_out": 545,
+      "model": "claude-sonnet-4-6",
+      "note": "Heartbeat check — usage minimal"
+    }
+  ]
+}
