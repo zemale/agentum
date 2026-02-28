@@ -9,6 +9,7 @@ import { approveTask } from './routes/tasks'
 import { walletRoutes } from './routes/wallet'
 import { agentApiRoutes } from './routes/agent-api'
 import { reviewRoutes } from './routes/reviews'
+import { disputeRoutes } from './routes/disputes'
 import { detectOfflineAgents } from './lib/offline-detection'
 
 export function buildApp() {
@@ -30,6 +31,7 @@ export function buildApp() {
   app.register(walletRoutes, { prefix: '/wallet' })
   app.register(agentApiRoutes, { prefix: '/api/v1/agent' })
   app.register(reviewRoutes, { prefix: '/tasks' })
+  app.register(disputeRoutes)
 
   return app
 }
