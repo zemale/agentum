@@ -1,0 +1,246 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+  engineType = "binary"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model User {
+  id            String        @id @default(uuid())
+  email         String        @unique
+  password      String
+  name          String
+  balance       Int           @default(1000)
+  frozen        Int           @default(0)
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+  deletedAt     DateTime?
+
+  // Relations
+  refreshTokens RefreshToken[]
+  agents        Agent[]
+  tasks         Task[]         @relation("CustomerTasks")
+  transactions  Transaction[]
+  disputes      Dispute[]      @relation("DisputeOpener")
+  resolvedDisputes Dispute[]  @relation("DisputeResolver")
+  reviews       Review[]       @relation("CustomerReviews")
+}
+
+model RefreshToken {
+  id        String   @id @default(uuid())
+  token     String   @unique
+  userId    String
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  // Relations
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Agent {
+  id              String    @id @default(uuid())
+  ownerId         String
+  name            String
+  description     String?
+  skills          String[]
+  hourlyRate      Int
+  apiKey          String    @unique
+  apiKeyRotatedAt DateTime?
+  ipWhitelist     String[]
+  isOnline        Boolean   @default(false)
+  lastPollAt      DateTime?
+  rating          Float     @default(0)
+  totalTasks      Int       @default(0)
+  successRate     Float     @default(0)
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  deletedAt       DateTime?
+
+  // Relations
+  owner           User      @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  services        Service[]
+  tasks           Task[]
+  reviews         Review[]  @relation("AgentReviews")
+  badges          Badge[]
+}
+
+model Service {
+  id          String    @id @default(uuid())
+  agentId     String
+  title       String
+  description String?
+  price       Int
+  isActive    Boolean   @default(true)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  deletedAt   DateTime?
+
+  // Relations
+  agent       Agent     @relation(fields: [agentId], references: [id], onDelete: Cascade)
+  tasks       Task[]
+}
+
+model Task {
+  id            String     @id @default(uuid())
+  customerId    String
+  agentId       String
+  serviceId     String?
+  title         String
+  description   String?
+  budget        Int
+  status        TaskStatus @default(CREATED)
+  result        String?
+  createdAt     DateTime   @default(now())
+  updatedAt     DateTime   @updatedAt
+  acceptedAt    DateTime?
+  completedAt   DateTime?
+  autoCloseAt   DateTime?
+  deletedAt     DateTime?
+
+  // Relations
+  customer      User       @relation("CustomerTasks", fields: [customerId], references: [id], onDelete: Cascade)
+  agent         Agent      @relation(fields: [agentId], references: [id], onDelete: Cascade)
+  service       Service?   @relation(fields: [serviceId], references: [id], onDelete: SetNull)
+  progress      Progress[]
+  transaction   Transaction?
+  review        Review?
+  dispute       Dispute?
+}
+
+model Progress {
+  id        String   @id @default(uuid())
+  taskId    String
+  message   String
+  metadata  Json?
+  createdAt DateTime @default(now())
+
+  // Relations
+  task      Task     @relation(fields: [taskId], references: [id], onDelete: Cascade)
+}
+
+model Transaction {
+  id            String   @id @default(uuid())
+  userId        String
+  type          TransactionType
+  amount        Int
+  balanceAfter  Int
+  taskId        String?  @unique
+  metadata      Json?
+  comment       String?
+  createdAt     DateTime @default(now())
+
+  // Relations
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  task          Task?    @relation(fields: [taskId], references: [id], onDelete: SetNull)
+}
+
+model Outbox {
+  id            String       @id @default(uuid())
+  aggregate     String
+  aggregateId   String
+  type          String
+  payload       Json
+  status        OutboxStatus @default(PENDING)
+  retryCount    Int          @default(0)
+  error         String?
+  processedAt   DateTime?
+  createdAt     DateTime     @default(now())
+
+  @@index([status, createdAt])
+}
+
+model DomainEvent {
+  id            String   @id @default(uuid())
+  type          String
+  aggregate     String
+  aggregateId   String
+  payload       Json
+  createdAt     DateTime @default(now())
+
+  @@index([aggregate, aggregateId])
+  @@index([createdAt])
+}
+
+model Review {
+  id          String   @id @default(uuid())
+  taskId      String   @unique
+  agentId     String
+  customerId  String
+  rating      Int
+  comment     String?
+  createdAt   DateTime @default(now())
+
+  // Relations
+  task        Task     @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  agent       Agent    @relation("AgentReviews", fields: [agentId], references: [id], onDelete: Cascade)
+  customer    User     @relation("CustomerReviews", fields: [customerId], references: [id], onDelete: Cascade)
+}
+
+model Badge {
+  id        String   @id @default(uuid())
+  agentId   String
+  type      String
+  earnedAt  DateTime @default(now())
+
+  // Relations
+  agent     Agent    @relation(fields: [agentId], references: [id], onDelete: Cascade)
+
+  @@unique([agentId, type])
+}
+
+model Dispute {
+  id              String         @id @default(uuid())
+  taskId          String         @unique
+  openedBy        String
+  reason          String
+  status          DisputeStatus  @default(OPEN)
+  resolution      String?
+  resolvedBy      String?
+  resolutionNote  String?
+  createdAt       DateTime       @default(now())
+  resolvedAt      DateTime?
+
+  // Relations
+  task            Task           @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  opener          User           @relation("DisputeOpener", fields: [openedBy], references: [id], onDelete: Cascade)
+  resolver        User?          @relation("DisputeResolver", fields: [resolvedBy], references: [id], onDelete: SetNull)
+}
+
+enum TaskStatus {
+  CREATED
+  ACCEPTED
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+  DISPUTED
+  CLOSED
+}
+
+enum TransactionType {
+  DEPOSIT
+  WITHDRAWAL
+  TASK_PAYMENT
+  TASK_REFUND
+  TASK_REWARD
+  FEE
+  ADJUSTMENT
+}
+
+enum OutboxStatus {
+  PENDING
+  PROCESSING
+  COMPLETED
+  FAILED
+}
+
+enum DisputeStatus {
+  OPEN
+  UNDER_REVIEW
+  RESOLVED
+  CLOSED
+}
