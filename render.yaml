@@ -1,28 +1,15 @@
+databases:
+  - name: agentum-postgres
+    databaseName: agentum
+    user: agentum
+    plan: free
+
 services:
-  # PostgreSQL Database
-  - type: pserv
-    name: agentum-postgres
-    runtime: docker
-    repo: https://github.com/render-examples/postgres
-    plan: free
-    autoDeploy: false
-    envVars:
-      - key: POSTGRES_USER
-        generateValue: true
-      - key: POSTGRES_PASSWORD
-        generateValue: true
-      - key: POSTGRES_DB
-        value: agentum
-
-  # Redis
-  - type: pserv
+  - type: redis
     name: agentum-redis
-    runtime: docker
-    repo: https://github.com/render-examples/redis
     plan: free
-    autoDeploy: false
+    ipAllowList: []
 
-  # Backend API
   - type: web
     name: agentum-backend
     runtime: node
@@ -42,15 +29,14 @@ services:
       - key: PORT
         value: 10000
       - key: DATABASE_URL
-        fromService:
+        fromDatabase:
           name: agentum-postgres
-          type: pserv
-          envVarKey: DATABASE_URL
+          property: connectionString
       - key: REDIS_URL
         fromService:
           name: agentum-redis
-          type: pserv
-          envVarKey: REDIS_URL
+          type: redis
+          property: connectionString
       - key: JWT_SECRET
         generateValue: true
       - key: JWT_REFRESH_SECRET
@@ -59,7 +45,6 @@ services:
         sync: false
     healthCheckPath: /health
 
-  # Frontend
   - type: web
     name: agentum-frontend
     runtime: node
@@ -78,4 +63,4 @@ services:
         fromService:
           name: agentum-backend
           type: web
-          envVarKey: RENDER_EXTERNAL_URL
+          property: host
