@@ -16,7 +16,7 @@ export function buildApp() {
   const app = Fastify({ logger: process.env.NODE_ENV !== 'test' })
 
   app.register(cors, {
-    origin: process.env.FRONTEND_URL || 'http://localhost:3000',
+    origin: true,
     credentials: true,
   })
 
