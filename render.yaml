@@ -1,0 +1,75 @@
+services:
+  # PostgreSQL Database
+  - type: pserv
+    name: agentum-postgres
+    runtime: docker
+    repo: https://github.com/render-examples/postgres
+    plan: starter
+    envVars:
+      - key: POSTGRES_USER
+        generateValue: true
+      - key: POSTGRES_PASSWORD
+        generateValue: true
+      - key: POSTGRES_DB
+        value: agentum
+
+  # Redis
+  - type: pserv
+    name: agentum-redis
+    runtime: docker
+    repo: https://github.com/render-examples/redis
+    plan: starter
+
+  # Backend API
+  - type: web
+    name: agentum-backend
+    runtime: node
+    plan: starter
+    buildCommand: cd backend && npm install && npx prisma generate && npm run build
+    startCommand: cd backend && npx prisma migrate deploy && npm start
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 10000
+      - key: DATABASE_URL
+        fromService:
+          name: agentum-postgres
+          type: pserv
+          property: connectionString
+      - key: REDIS_URL
+        fromService:
+          name: agentum-redis
+          type: pserv
+          property: connectionString
+      - key: JWT_SECRET
+        generateValue: true
+      - key: JWT_REFRESH_SECRET
+        generateValue: true
+      - key: SENTRY_DSN
+        sync: false
+    healthCheckPath: /health
+
+  # Frontend
+  - type: web
+    name: agentum-frontend
+    runtime: node
+    plan: starter
+    buildCommand: cd frontend && npm install && npm run build
+    startCommand: cd frontend && npm start
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: NEXT_PUBLIC_API_URL
+        fromService:
+          name: agentum-backend
+          type: web
+          property: host
+          suffix: /
+    routes:
+      - type: rewrite
+        source: /api/*
+        destination: https://agentum-backend.onrender.com/api/$1
+      - type: rewrite
+        source: /events/*
+        destination: https://agentum-backend.onrender.com/events/$1
