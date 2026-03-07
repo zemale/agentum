@@ -8,6 +8,7 @@ services:
   - type: redis
     name: agentum-redis
     plan: free
+    ipAllowList: []
 
   - type: web
     name: agentum-backend
@@ -45,7 +46,4 @@ services:
       - key: NODE_ENV
         value: production
       - key: NEXT_PUBLIC_API_URL
-        fromService:
-          type: web
-          name: agentum-backend
-          property: url
+        value: https://agentum-backend.onrender.com
