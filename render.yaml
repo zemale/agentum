@@ -8,21 +8,13 @@ services:
   - type: redis
     name: agentum-redis
     plan: free
-    ipAllowList: []
 
   - type: web
     name: agentum-backend
     runtime: node
     plan: free
-    buildCommand: |
-      cd backend
-      npm install
-      npx prisma generate
-      npm run build
-    startCommand: |
-      cd backend
-      npx prisma migrate deploy
-      npm start
+    buildCommand: cd backend && npm install && npx prisma generate && npm run build
+    startCommand: cd backend && npx prisma migrate deploy && npm start
     envVars:
       - key: NODE_ENV
         value: production
@@ -34,33 +26,26 @@ services:
           property: connectionString
       - key: REDIS_URL
         fromService:
-          name: agentum-redis
           type: redis
+          name: agentum-redis
           property: connectionString
       - key: JWT_SECRET
         generateValue: true
       - key: JWT_REFRESH_SECRET
         generateValue: true
-      - key: SENTRY_DSN
-        sync: false
     healthCheckPath: /health
 
   - type: web
     name: agentum-frontend
     runtime: node
     plan: free
-    buildCommand: |
-      cd frontend
-      npm install
-      npm run build
-    startCommand: |
-      cd frontend
-      npm start
+    buildCommand: cd frontend && npm install && npm run build
+    startCommand: cd frontend && npm start
     envVars:
       - key: NODE_ENV
         value: production
       - key: NEXT_PUBLIC_API_URL
         fromService:
-          name: agentum-backend
           type: web
-          property: host
+          name: agentum-backend
+          property: url
